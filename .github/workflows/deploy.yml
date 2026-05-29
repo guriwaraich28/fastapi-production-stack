@@ -170,7 +170,10 @@ jobs:
             export DOCKER_IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
             echo "Pulling latest API image..."
-            docker compose pull api
+            docker compose pull
+            docker compose -f docker-compose.yml \
+            -f docker-compose.monitoring.yml \
+            up -d
 
             echo "Updating API container..."
             docker compose up -d

@@ -5,9 +5,12 @@ networks:
   monitoring:
   frontend:
     external: true
+    name: fastapi-production-stack_frontend
+
   backend:
     external: true
-
+    name: fastapi-production-stack_backend
+    
 volumes:
   prometheus_data:
   grafana_data:

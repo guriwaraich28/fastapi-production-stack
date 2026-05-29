@@ -155,7 +155,7 @@ jobs:
           script: |
             set -e
 
-            cd ~/devops-demo
+            cd ~/fastapi-production-stack
 
             echo "Pulling latest source..."
             git pull origin main

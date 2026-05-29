@@ -65,6 +65,7 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://testuser:testpass@localhost:5432/testdb
           REDIS_URL: redis://localhost:6379
           APP_ENV: test
+          PYTHONPATH: .
         run: |
           if [ -d "app/tests" ]; then
             pytest app/tests/ -v --tb=short
@@ -90,6 +91,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Create Environment File
+        run: cp .env.example .env
 
       - name: Validate Docker Compose
         run: docker compose -f docker-compose.yml config

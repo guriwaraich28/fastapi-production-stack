@@ -173,10 +173,12 @@ jobs:
             docker compose pull api
 
             echo "Updating API container..."
-            docker compose up -d --no-deps api
+            docker compose up -d
 
             echo "Reloading NGINX..."
+            if docker compose ps nginx | grep -q "Up"; then
             docker compose exec -T nginx nginx -s reload
+            fi
 
             echo "Cleaning old images..."
             docker image prune -f
@@ -192,7 +194,7 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
 
           script: |
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/health)
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}"http://localhost:8000/health)
 
             if [ "$STATUS" != "200" ]; then
               echo "❌ Health check failed with status $STATUS"

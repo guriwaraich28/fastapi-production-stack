@@ -1,83 +1,74 @@
-# DevOps Demo API
+# FastAPI Production Stack
 
-## Overview
+A production-ready FastAPI deployment stack demonstrating modern DevOps practices including containerization, reverse proxying, CI/CD, monitoring, security hardening, automated backups, and cloud deployment.
 
-This project demonstrates the deployment and productionization of a FastAPI-based backend application using Docker, PostgreSQL, Redis, NGINX, GitHub Actions CI/CD, automated backups, monitoring, SSL automation, and VPS hardening.
+## Architecture Overview
 
-The goal of this project is to showcase real-world DevOps practices including containerization, infrastructure automation, deployment automation, monitoring, security, and operational reliability.
+![Architecture](./docs/architecture.png)
 
----
+## Project Overview
 
-## Features
+This project was built as part of a DevOps Engineer technical assessment to demonstrate real-world deployment, infrastructure management, automation, monitoring, and operational reliability.
 
-### Application Layer
+The stack includes:
 
-* FastAPI REST API
-* Swagger/OpenAPI documentation
-* Health check endpoint
-* PostgreSQL integration
-* Redis caching
-
-### Infrastructure
-
-* Dockerized application
-* Multi-stage Docker builds
-* Docker Compose orchestration
-* NGINX reverse proxy
-* Environment variable management
-
-### Security
-
-* SSH hardening
-* UFW firewall
-* Fail2ban intrusion prevention
-* Non-root Docker containers
-* Docker log rotation
-
-### Operations
-
-* Automated PostgreSQL backups
-* Redis snapshot backups
-* Backup retention policy
-* SSL certificate automation
-* Health monitoring
-
-### CI/CD
-
-* GitHub Actions pipeline
-* Automated image builds
-* GitHub Container Registry (GHCR)
-* Automated VPS deployment
-* Deployment verification
-
-### Monitoring (Bonus)
-
-* Prometheus
-* Grafana
-* Node Exporter
-* PostgreSQL Exporter
+* FastAPI Application
+* PostgreSQL Database
+* Redis Cache
+* NGINX Reverse Proxy
+* Docker & Docker Compose
+* GitHub Actions CI/CD
+* AWS EC2 Deployment
+* Prometheus Monitoring
+* Grafana Dashboards
+* Automated Backups
+* SSL Automation
+* UFW Firewall
+* Fail2Ban Intrusion Prevention
 
 ---
 
 ## Architecture
 
 ```text
-                    Internet
-                        │
-                        ▼
-                 Cloudflare (Optional)
-                        │
-                        ▼
-                    NGINX
-                        │
-                        ▼
-                   FastAPI API
-                    │       │
-                    ▼       ▼
-                 Redis   PostgreSQL
-                    │
-                    ▼
-         Prometheus + Grafana
+                        GitHub Repository
+                               │
+                               ▼
+                      GitHub Actions CI/CD
+                               │
+                               ▼
+                    GitHub Container Registry
+                               │
+                               ▼
+                          AWS EC2 VPS
+                               │
+                               ▼
+                           NGINX
+                               │
+                               ▼
+                           FastAPI
+                           /      \
+                          /        \
+                         ▼          ▼
+                    PostgreSQL    Redis
+
+
+              ┌─────────────────────────┐
+              │     Monitoring Stack    │
+              └─────────────────────────┘
+
+                Node Exporter
+                       │
+                       ▼
+                  Prometheus
+                       │
+                       ▼
+                    Grafana
+
+                PostgreSQL Exporter
+                       │
+                       ▼
+                  Prometheus
 ```
 
 ---
@@ -87,6 +78,7 @@ The goal of this project is to showcase real-world DevOps practices including co
 ### Backend
 
 * FastAPI
+* Uvicorn
 * Python 3.12
 
 ### Database
@@ -111,6 +103,10 @@ The goal of this project is to showcase real-world DevOps practices including co
 * GitHub Actions
 * GitHub Container Registry (GHCR)
 
+### Cloud
+
+* AWS EC2
+
 ### Monitoring
 
 * Prometheus
@@ -120,42 +116,106 @@ The goal of this project is to showcase real-world DevOps practices including co
 
 ### Security
 
-* UFW
-* Fail2ban
-* Let's Encrypt
+* UFW Firewall
+* Fail2Ban
+* SSH Key Authentication
+* NGINX Security Headers
 
 ---
 
-## Project Structure
+# Features
+
+## Application Features
+
+* FastAPI REST API
+* Health Check Endpoint
+* Environment-based Configuration
+* PostgreSQL Integration
+* Redis Integration
+
+---
+
+## Infrastructure Features
+
+* Multi-container Docker Deployment
+* Reverse Proxy with NGINX
+* SSL Automation Support
+* Automated Container Restart
+* Persistent Storage Volumes
+
+---
+
+## DevOps Features
+
+* Automated CI/CD Pipeline
+* Docker Image Build Automation
+* Container Registry Integration
+* Automated VPS Deployment
+* Health Verification After Deployment
+
+---
+
+## Monitoring Features
+
+* Prometheus Metrics Collection
+* Grafana Dashboards
+* Node Exporter Metrics
+* PostgreSQL Metrics
+* Infrastructure Monitoring
+
+---
+
+## Security Features
+
+* UFW Firewall
+* Fail2Ban Protection
+* SSH Key Authentication
+* Security Headers
+* Docker Security Options
+* No-New-Privileges Containers
+
+---
+
+## Backup Features
+
+* Automated PostgreSQL Backups
+* Automated Redis Snapshots
+* Backup Retention Policy
+* Cron-based Scheduling
+
+---
+
+# Repository Structure
 
 ```text
-AI-DEVOPS-ASSIGNMENT
-│
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
-│
+.
 ├── app/
-│   ├── Dockerfile
 │   ├── main.py
+│   ├── routers/
+│   ├── models/
+│   ├── services/
 │   └── requirements.txt
 │
 ├── nginx/
 │   ├── nginx.conf
-│   └── conf.d/
-│       └── default.conf
-│
-├── postgres/
-│   └── init.sql
+│   ├── conf.d/
+│   └── certs/
 │
 ├── monitoring/
 │   ├── prometheus.yml
 │   └── grafana/
 │
+├── postgres/
+│   └── init.sql
+│
 ├── scripts/
 │   ├── backup.sh
 │   ├── server-setup.sh
 │   └── setup-ssl.sh
+│
+├── .github/
+│   └── workflows/
+│       └── deploy.yml
 │
 ├── docker-compose.yml
 ├── docker-compose.monitoring.yml
@@ -166,79 +226,187 @@ AI-DEVOPS-ASSIGNMENT
 
 ---
 
-## Environment Variables
+# Health Check
 
-Example:
+Endpoint:
 
-```env
-APP_ENV=production
+```http
+GET /health
+```
 
-POSTGRES_DB=appdb
-POSTGRES_USER=appuser
-POSTGRES_PASSWORD=strongpassword
+Example Response:
 
-REDIS_PASSWORD=redispassword
+```json
+{
+  "status": "healthy"
+}
+```
 
-DOCKER_IMAGE=ghcr.io/username/devops-demo-api
-IMAGE_TAG=latest
+Used by:
+
+* Docker Health Checks
+* NGINX Validation
+* CI/CD Deployment Verification
+
+---
+
+# CI/CD Pipeline
+
+The deployment pipeline automatically executes on every push to the main branch.
+
+### Workflow
+
+1. Code Push
+2. Lint & Validation
+3. Unit Tests
+4. Docker Image Build
+5. Push Image to GHCR
+6. SSH Into EC2
+7. Pull Latest Image
+8. Deploy Containers
+9. Verify Health Endpoint
+
+### GitHub Actions
+
+![Pipeline](./docs/screenshots/github-actions-success.png)
+
+Pipeline stages:
+
+* Lint & Test
+* Build & Push Docker Image
+* Deploy to VPS
+* Verify Deployment
+
+---
+
+# Monitoring
+
+## Prometheus
+
+![Prometheus](./docs/screenshots/prometheus.png)
+
+Collects metrics from:
+
+* Node Exporter
+* PostgreSQL Exporter
+* Prometheus
+
+Access:
+
+```text
+http://SERVER_IP:9090
 ```
 
 ---
 
-## Running Locally
+## Grafana
 
-### Clone Repository
+![Grafana](./docs/screenshots/grafana.png)
 
-```bash
-git clone <repository-url>
-cd AI-DEVOPS-ASSIGNMENT
+Visualizes infrastructure metrics.
+
+Access:
+
+```text
+http://SERVER_IP:3000
 ```
 
-### Configure Environment
+Example Metrics:
+
+* CPU Usage
+* Memory Usage
+* Disk Utilization
+* Network Traffic
+* PostgreSQL Metrics
+
+---
+
+# Security
+
+The server is hardened using:
+
+### UFW Firewall
+
+Allowed Ports:
+
+* 22 (SSH)
+* 80 (HTTP)
+* 443 (HTTPS)
+
+### Fail2Ban
+
+Protects against:
+
+* SSH Brute Force Attacks
+* Authentication Abuse
+
+### SSH Security
+
+* Password Login Disabled
+* Key-based Authentication
+* Root Login Disabled
+
+---
+
+# Backup Strategy
+
+Backups are automated using cron jobs.
+
+### PostgreSQL
+
+* Daily Dumps
+* Compressed Storage
+* Retention Policy
+
+### Redis
+
+* RDB Snapshots
+* Scheduled Backup
+
+### Retention
+
+Default:
+
+```text
+7 Days
+```
+
+---
+
+# SSL Strategy
+
+The project includes:
+
+### Production
+
+* Let's Encrypt
+* Automated Renewal
+
+### Development
+
+* Self-Signed Certificates
+
+SSL setup is handled through:
+
+```bash
+scripts/setup-ssl.sh
+```
+
+---
+
+# Deployment
+
+### Local Deployment
 
 ```bash
 cp .env.example .env
-```
 
-Update values as required.
-
-### Start Application
-
-```bash
-docker compose up --build -d
-```
-
-### Verify Containers
-
-```bash
-docker ps
-```
-
-### Access Services
-
-FastAPI:
-
-```text
-http://localhost
-```
-
-Swagger UI:
-
-```text
-http://localhost/docs
-```
-
-Health Check:
-
-```text
-http://localhost/health
+docker compose up -d
 ```
 
 ---
 
-## Monitoring Setup
-
-Start monitoring stack:
+### Monitoring Deployment
 
 ```bash
 docker compose \
@@ -247,237 +415,45 @@ docker compose \
 up -d
 ```
 
-Prometheus:
+---
 
-```text
-http://localhost:9090
-```
+### AWS EC2 Deployment
 
-Grafana:
+Deployment is automated through GitHub Actions.
 
-```text
-http://localhost:3000
-```
+Required Secrets:
 
-Default credentials:
-
-```text
-Username: admin
-Password: admin
-```
+* VPS_HOST
+* VPS_USER
+* VPS_PORT
+* VPS_SSH_KEY
+* GHCR_PAT
 
 ---
 
-## CI/CD Pipeline
 
-The GitHub Actions workflow performs:
+# Future Improvements
 
-1. Code checkout
-2. Dependency installation
-3. Linting with Ruff
-4. Automated tests
-5. Docker image build
-6. Push image to GHCR
-7. Deploy to VPS
-8. Health verification
+Potential enhancements:
 
-Deployment is triggered automatically on push to the main branch.
+* Cloudflare Integration
+* Distributed Tracing
+* Kubernetes Deployment
+* Terraform Infrastructure Provisioning
+* Managed Database Services
+* Alertmanager Integration
 
 ---
 
-## Health Checks
+# Author
 
-The application exposes:
+Gurwinder Singh Waraich
 
-```http
-GET /health
-```
-
-Checks:
-
-* Application status
-* PostgreSQL connectivity
-* Redis connectivity
-
-Returns:
-
-```json
-{
-  "status": "ok",
-  "postgres": "ok",
-  "redis": "ok"
-}
-```
+GitHub:
+https://github.com/guriwaraich28
 
 ---
 
-## Logging Strategy
+# License
 
-### Application Logs
-
-FastAPI logs:
-
-* Request processing
-* Cache hits
-* Database operations
-* Application startup/shutdown
-
-### NGINX Logs
-
-JSON formatted access logs:
-
-* Request method
-* URI
-* Response status
-* Request duration
-* User agent
-
-### Docker Log Rotation
-
-Configured using:
-
-```json
-{
-  "max-size": "10m",
-  "max-file": "3"
-}
-```
-
-to prevent excessive disk usage.
-
----
-
-## Security Measures
-
-### Server Security
-
-* Dedicated deployment user
-* SSH key authentication
-* Root login disabled
-* Password authentication disabled
-* UFW firewall enabled
-* Fail2ban protection
-
-### Container Security
-
-* Non-root application container
-* Network segmentation
-* Internal database access only
-* No unnecessary exposed ports
-
-### SSL Security
-
-* Let's Encrypt support
-* Automatic certificate renewal
-* Self-signed certificate support for evaluation environments
-
----
-
-## Backup Strategy
-
-### PostgreSQL
-
-Uses:
-
-```bash
-pg_dump
-```
-
-to create compressed backups.
-
-### Redis
-
-Uses:
-
-```bash
-BGSAVE
-```
-
-to create Redis snapshots.
-
-### Retention Policy
-
-* 7-day retention
-* Automatic cleanup of old backups
-
-### Scheduled Backups
-
-```cron
-0 2 * * * bash scripts/backup.sh
-```
-
----
-
-## SSL Strategy
-
-### Production
-
-Let's Encrypt certificates:
-
-```bash
-bash scripts/setup-ssl.sh \
---domain api.example.com \
---email admin@example.com
-```
-
-### No Domain Available
-
-Generate self-signed certificates:
-
-```bash
-bash scripts/setup-ssl.sh --self-signed
-```
-
-This allows HTTPS testing even without a public domain.
-
----
-
-## Cloudflare Integration (Optional)
-
-Cloudflare can be placed in front of NGINX to provide:
-
-* DNS management
-* DDoS protection
-* CDN caching
-* WAF protection
-* SSL enhancement
-
-Recommended SSL mode:
-
-```text
-Full (Strict)
-```
-
----
-
-## Future Improvements
-
-* Kubernetes deployment
-* Blue-Green deployment strategy
-* OpenTelemetry tracing
-* AWS S3 backup storage
-* Cloudflare Tunnel integration
-* AI/LLM endpoint integration
-* AlertManager notifications
-
----
-
-## Assignment Requirements Covered
-
-* Dockerized FastAPI application
-* Docker Compose setup
-* PostgreSQL integration
-* Redis integration
-* NGINX reverse proxy
-* Environment variable management
-* SSL setup
-* Security hardening
-* Health checks
-* Logging strategy
-* Backup strategy
-* GitHub Actions CI/CD
-* Automated deployment
-* Monitoring stack
-* Infrastructure automation
-
-This project demonstrates a production-oriented DevOps workflow suitable for modern backend application deployments.
+This project is provided for educational and demonstration purposes.

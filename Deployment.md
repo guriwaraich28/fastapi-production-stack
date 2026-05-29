@@ -1,8 +1,26 @@
 # Deployment Guide
 
-## Overview
+This document describes how to deploy the FastAPI Production Stack on an Ubuntu VPS (AWS EC2 used in this project).
 
-This document explains how to deploy the DevOps Demo API on a fresh Ubuntu 22.04 VPS using Docker, Docker Compose, NGINX, PostgreSQL, Redis, GitHub Actions, and optional monitoring components.
+
+---
+
+## Architecture
+
+![Architecture](./docs/architecture.png)
+
+The application stack consists of:
+
+* FastAPI
+* PostgreSQL
+* Redis
+* NGINX Reverse Proxy
+* Prometheus
+* Grafana
+* Node Exporter
+* PostgreSQL Exporter
+
+Deployment is fully automated through GitHub Actions.
 
 ---
 
@@ -10,36 +28,99 @@ This document explains how to deploy the DevOps Demo API on a fresh Ubuntu 22.04
 
 ## VPS Requirements
 
-Recommended specifications:
+Minimum recommended specifications:
 
-| Resource | Minimum          |
+| Resource | Recommended      |
 | -------- | ---------------- |
 | CPU      | 2 vCPU           |
-| Memory   | 2 GB RAM         |
+| RAM      | 2 GB             |
 | Storage  | 20 GB SSD        |
 | OS       | Ubuntu 22.04 LTS |
 
----
+This project was tested on:
 
-# Step 1: Connect to the VPS
-
-```bash
-ssh root@YOUR_SERVER_IP
-```
-
-Verify connectivity:
-
-```bash
-uname -a
-```
+* AWS EC2
+* Ubuntu 22.04
 
 ---
 
-# Step 2: Run Server Bootstrap Script
+# Step 1: Launch EC2 Instance
 
-The project includes a server hardening and provisioning script.
+Create an EC2 instance.
 
-Execute:
+Recommended:
+
+* Ubuntu 22.04 LTS
+* t2.small or t3.small
+* Security Group configured with:
+
+| Port | Protocol | Purpose    |
+| ---- | -------- | ---------- |
+| 22   | TCP      | SSH        |
+| 80   | TCP      | HTTP       |
+| 443  | TCP      | HTTPS      |
+| 3000 | TCP      | Grafana    |
+| 9090 | TCP      | Prometheus |
+
+---
+
+# Step 2: Connect to Server
+
+```bash
+ssh -i my-key.pem ubuntu@SERVER_IP
+```
+
+Verify connection:
+
+```bash
+hostname
+```
+
+---
+
+# Step 3: Clone Repository
+
+```bash
+git clone https://github.com/<your-username>/fastapi-production-stack.git
+
+cd fastapi-production-stack
+```
+
+---
+
+# Step 4: Configure Environment Variables
+
+Copy template:
+
+```bash
+cp .env.example .env
+```
+
+Edit values:
+
+```bash
+nano .env
+```
+
+Example:
+
+```env
+POSTGRES_DB=appdb
+POSTGRES_USER=appuser
+POSTGRES_PASSWORD=securepassword
+
+REDIS_PASSWORD=redispassword
+
+APP_ENV=production
+
+GRAFANA_PASSWORD=admin123
+```
+
+---
+
+# Step 5: Initial Server Setup
+
+Run server hardening script:
 
 ```bash
 sudo bash scripts/server-setup.sh \
@@ -47,118 +128,125 @@ sudo bash scripts/server-setup.sh \
 --pubkey "YOUR_PUBLIC_SSH_KEY"
 ```
 
-The script automatically:
+This performs:
 
-* Creates deployment user
-* Configures SSH key authentication
-* Disables root login
-* Disables password authentication
-* Installs Docker
-* Installs Docker Compose
-* Installs Fail2ban
-* Installs UFW
-* Installs Certbot
-* Configures Docker log rotation
-* Creates scheduled backup jobs
-
----
-
-# Step 3: Log In as Deployment User
-
-```bash
-ssh deployer@YOUR_SERVER_IP
-```
-
-Verify Docker:
-
-```bash
-docker --version
-docker compose version
-```
-
----
-
-# Step 4: Clone Repository
-
-```bash
-git clone https://github.com/YOUR_USERNAME/AI-DEVOPS-ASSIGNMENT.git
-
-cd AI-DEVOPS-ASSIGNMENT
-```
-
----
-
-# Step 5: Configure Environment Variables
-
-Create environment file:
-
-```bash
-cp .env.example .env
-```
-
-Example configuration:
-
-```env
-APP_ENV=production
-
-POSTGRES_DB=appdb
-POSTGRES_USER=appuser
-POSTGRES_PASSWORD=strongpassword
-
-REDIS_PASSWORD=strongredispassword
-
-DOCKER_IMAGE=ghcr.io/YOUR_USERNAME/devops-demo-api
-IMAGE_TAG=latest
-```
+* System updates
+* Deploy user creation
+* SSH hardening
+* Docker installation
+* Docker Compose installation
+* UFW firewall setup
+* Fail2Ban setup
+* Backup cron jobs
 
 ---
 
 # Step 6: Configure SSL
 
-## Option A: Production Domain
+## Option A — Let's Encrypt
 
 ```bash
-bash scripts/setup-ssl.sh \
+sudo bash scripts/setup-ssl.sh \
 --domain api.example.com \
 --email admin@example.com
 ```
 
 This will:
 
-* Generate Let's Encrypt certificates
-* Install certificates into NGINX
+* Request Let's Encrypt certificate
+* Configure NGINX certificates
 * Enable HTTPS
 
 ---
 
-## Option B: No Domain Available
+## Option B — Self Signed
+
+If no domain is available:
 
 ```bash
-bash scripts/setup-ssl.sh --self-signed
+sudo bash scripts/setup-ssl.sh --self-signed
 ```
 
-This creates self-signed certificates suitable for testing and assignment evaluation.
+This generates:
+
+```text
+nginx/certs/fullchain.pem
+nginx/certs/privkey.pem
+```
 
 Note:
 
-Browsers will display a security warning when using self-signed certificates.
+Browsers will show certificate warnings when using self-signed certificates.
 
 ---
 
-# Step 7: Start Application
+# Step 7: Start Core Application Stack
 
-Build and start all services:
+Deploy application services:
 
 ```bash
-docker compose up --build -d
+docker compose up -d
 ```
 
 Services started:
 
-* FastAPI
 * PostgreSQL
 * Redis
+* FastAPI
 * NGINX
+
+Verify:
+
+```bash
+docker compose ps
+```
+
+Expected:
+
+```text
+postgres      healthy
+redis         healthy
+fastapi-api   healthy
+nginx-proxy   running
+```
+
+---
+
+# Step 8: Verify Health Endpoint
+
+Run:
+
+```bash
+curl http://localhost/health
+```
+
+Expected:
+
+```json
+{
+  "status": "healthy"
+}
+```
+
+---
+
+# Step 9: Deploy Monitoring Stack
+
+Start monitoring services:
+
+```bash
+docker compose \
+-f docker-compose.yml \
+-f docker-compose.monitoring.yml \
+up -d
+```
+
+Services started:
+
+* Prometheus
+* Grafana
+* Node Exporter
+* PostgreSQL Exporter
 
 Verify:
 
@@ -169,157 +257,17 @@ docker ps
 Expected containers:
 
 ```text
-postgres
-redis
-api
-nginx
+prometheus
+grafana
+node-exporter
+postgres-exporter
 ```
 
 ---
 
-# Step 8: Verify Application
-
-## Root Endpoint
-
-```bash
-curl http://localhost
-```
-
-Expected:
-
-```json
-{
-  "message": "DevOps Demo API is running"
-}
-```
-
----
-
-## Health Check
-
-```bash
-curl http://localhost/health
-```
-
-Expected:
-
-```json
-{
-  "status": "ok",
-  "postgres": "ok",
-  "redis": "ok"
-}
-```
-
----
-
-## API Documentation
+# Step 10: Configure Grafana
 
 Open:
-
-```text
-http://SERVER_IP/docs
-```
-
-Swagger UI should be available.
-
----
-
-# Step 9: Configure GitHub Actions
-
-Navigate to:
-
-GitHub Repository → Settings → Secrets and Variables → Actions
-
-Create the following secrets:
-
-```text
-VPS_HOST
-VPS_USER
-VPS_SSH_KEY
-GHCR_PAT
-```
-
-Optional:
-
-```text
-VPS_PORT
-```
-
----
-
-# Step 10: Configure GitHub Container Registry
-
-The CI/CD pipeline pushes Docker images to GitHub Container Registry (GHCR).
-
-Example image:
-
-```text
-ghcr.io/YOUR_USERNAME/devops-demo-api
-```
-
-Ensure:
-
-* Packages are enabled
-* GHCR Personal Access Token has package permissions
-
----
-
-# Step 11: CI/CD Deployment Workflow
-
-Deployment process:
-
-```text
-Developer Push
-       │
-       ▼
-GitHub Actions
-       │
-       ▼
-Lint Code
-       │
-       ▼
-Run Tests
-       │
-       ▼
-Build Docker Image
-       │
-       ▼
-Push Image to GHCR
-       │
-       ▼
-SSH Into VPS
-       │
-       ▼
-Pull Latest Image
-       │
-       ▼
-Restart API Container
-       │
-       ▼
-Verify Health Endpoint
-```
-
-Deployment is triggered automatically when code is pushed to the main branch.
-
----
-
-# Step 12: Enable Monitoring (Optional)
-
-Start monitoring stack:
-
-```bash
-docker compose \
--f docker-compose.yml \
--f docker-compose.monitoring.yml \
-up -d
-```
-
----
-
-## Grafana
-
-URL:
 
 ```text
 http://SERVER_IP:3000
@@ -328,199 +276,324 @@ http://SERVER_IP:3000
 Default credentials:
 
 ```text
-admin
-admin
+Username: admin
+Password: <GRAFANA_PASSWORD>
 ```
 
 ---
 
-## Prometheus
+## Add Prometheus Data Source
 
-URL:
+Navigate:
+
+```text
+Connections
+→ Data Sources
+→ Add Data Source
+→ Prometheus
+```
+
+Prometheus URL:
+
+```text
+http://prometheus:9090
+```
+
+Click:
+
+```text
+Save & Test
+```
+
+Expected:
+
+```text
+Datasource is working
+```
+
+---
+
+## Import Dashboard
+
+Recommended Dashboard ID:
+
+```text
+1860
+```
+
+Node Exporter Full Dashboard.
+
+Provides:
+
+* CPU usage
+* RAM usage
+* Disk utilization
+* Network metrics
+
+---
+
+# Prometheus Verification
+
+Open:
 
 ```text
 http://SERVER_IP:9090
+```
+
+Navigate:
+
+```text
+Status
+→ Targets
+```
+
+Expected targets:
+
+```text
+prometheus
+node-exporter
+postgres-exporter
+```
+
+Status:
+
+```text
+UP
+```
+
+---
+
+# GitHub Actions CI/CD Setup
+
+Repository Secrets:
+
+| Secret      | Description                     |
+| ----------- | ------------------------------- |
+| VPS_HOST    | EC2 Public IP                   |
+| VPS_USER    | SSH User                        |
+| VPS_PORT    | SSH Port                        |
+| VPS_SSH_KEY | Private SSH Key                 |
+| GHCR_PAT    | GitHub Container Registry Token |
+
+---
+
+# CI/CD Workflow
+
+Every push to main triggers:
+
+```text
+Developer Push
+        ↓
+GitHub Actions
+        ↓
+Lint & Tests
+        ↓
+Docker Build
+        ↓
+Push Image to GHCR
+        ↓
+SSH Into EC2
+        ↓
+Deploy Containers
+        ↓
+Health Verification
 ```
 
 ---
 
 # Backup Strategy
 
-Backups are automated using cron.
-
-Manual execution:
+Automated via:
 
 ```bash
-bash scripts/backup.sh
+scripts/backup.sh
 ```
 
-Backs up:
+Components:
 
-* PostgreSQL database
-* Redis snapshots
+### PostgreSQL
 
-Backup retention:
-
-```text
-7 days
+```bash
+pg_dump
 ```
 
-Backup location:
+Compressed:
 
 ```text
-/opt/backups/devops-demo
+postgres/pg_TIMESTAMP.sql.gz
+```
+
+### Redis
+
+```bash
+BGSAVE
+```
+
+Stored as:
+
+```text
+redis_TIMESTAMP.rdb
+```
+
+---
+
+# Backup Retention
+
+Default:
+
+```text
+7 Days
+```
+
+Configurable via:
+
+```env
+RETENTION_DAYS=7
+```
+
+---
+
+# Scheduled Tasks
+
+Configured through cron.
+
+View:
+
+```bash
+crontab -l
+```
+
+Example:
+
+```cron
+0 2 * * * backup.sh
+0 3 * * * certbot renew
 ```
 
 ---
 
 # Security Measures
 
-The deployment includes:
+Implemented controls:
 
-## SSH Hardening
+### UFW Firewall
 
-* SSH key authentication only
-* Root login disabled
-* Password authentication disabled
-
-## Firewall
-
-UFW rules:
+Allowed:
 
 ```text
-22/tcp
-80/tcp
-443/tcp
+22
+80
+443
 ```
 
-## Intrusion Prevention
+### Fail2Ban
 
-Fail2ban enabled for:
+Protects:
 
-* SSH protection
-* NGINX authentication protection
+* SSH
+* NGINX Authentication
 
-## Container Security
+### SSH Hardening
 
-* Non-root application container
-* Internal Docker networks
-* Restricted service exposure
+* Root Login Disabled
+* Password Authentication Disabled
+* Key Authentication Only
 
----
+### Docker Security
 
-# Log Management
-
-## FastAPI
-
-Application logs:
-
-```bash
-docker compose logs api
+```text
+no-new-privileges
 ```
 
-## NGINX
-
-Reverse proxy logs:
-
-```bash
-docker compose logs nginx
-```
-
-## Docker
-
-Log rotation configured:
-
-```json
-{
-  "max-size": "10m",
-  "max-file": "3"
-}
-```
+enabled on containers.
 
 ---
 
 # Troubleshooting
 
-## Check Container Status
+## Containers Not Starting
+
+Check:
+
+```bash
+docker compose logs
+```
+
+---
+
+## Application Health Check Failing
+
+Check:
+
+```bash
+docker logs fastapi-api
+```
+
+Verify:
+
+```bash
+curl http://localhost/health
+```
+
+---
+
+## Database Connection Issues
+
+Check:
+
+```bash
+docker logs postgres
+```
+
+Verify:
+
+```bash
+docker exec -it postgres psql -U appuser
+```
+
+---
+
+## Monitoring Not Working
+
+Verify:
 
 ```bash
 docker ps
 ```
 
----
-
-## View Logs
+Check Prometheus:
 
 ```bash
-docker compose logs -f
+curl http://localhost:9090
 ```
 
-Specific service:
+Check Grafana:
 
 ```bash
-docker compose logs api
-docker compose logs postgres
-docker compose logs redis
-docker compose logs nginx
+curl http://localhost:3000
 ```
 
 ---
 
-## Restart Services
+# Deployment Validation Checklist
 
-```bash
-docker compose restart
-```
-
-Single service:
-
-```bash
-docker compose restart api
-```
-
----
-
-## Rebuild Application
-
-```bash
-docker compose up --build -d
-```
+* [x] FastAPI Running
+* [x] PostgreSQL Running
+* [x] Redis Running
+* [x] NGINX Running
+* [x] Health Endpoint Working
+* [x] CI/CD Pipeline Passing
+* [x] Monitoring Stack Running
+* [x] Automated Backups Configured
+* [x] Firewall Configured
+* [x] Fail2Ban Configured
+* [x] SSL Strategy Implemented
 
 ---
 
-# Disaster Recovery
+# Author
 
-## Restore PostgreSQL
+Gurwinder Singh Waraich
 
-```bash
-gunzip < backup.sql.gz | psql -U appuser appdb
-```
-
----
-
-## Restore Redis
-
-```bash
-docker compose stop redis
-
-cp dump.rdb /var/lib/docker/volumes/redis_data/_data/
-
-docker compose start redis
-```
-
----
-
-# Conclusion
-
-This deployment implements production-oriented DevOps practices including:
-
-* Containerized application deployment
-* Automated CI/CD
-* Infrastructure automation
-* Security hardening
-* Backup and recovery
-* Monitoring and observability
-* SSL certificate management
-* Health monitoring
-
-The architecture is designed to be reproducible, secure, and suitable for real-world backend application deployments.
+GitHub:
+https://github.com/guriwaraich28

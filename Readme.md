@@ -6,7 +6,7 @@ A production-ready FastAPI deployment stack demonstrating modern DevOps practice
 
 Watch the full deployment walkthrough here:
 
-[▶️ Watch Video](https://your-video-link-here)
+[▶️ Watch Video](https://drive.google.com/file/d/1x4E0_o5ScDJO8t5grF0SXLTKVh-Begkc/view?usp=sharing)
 
 ---
 

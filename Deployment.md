@@ -2,10 +2,9 @@
 
 This document describes how to deploy the FastAPI Production Stack on an Ubuntu VPS (AWS EC2 used in this project).
 
-
 ---
 
-## Architecture
+## Architecture Overview
 
 ![Architecture](./docs/architecture.png)
 

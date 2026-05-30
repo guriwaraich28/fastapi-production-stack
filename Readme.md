@@ -2,6 +2,14 @@
 
 A production-ready FastAPI deployment stack demonstrating modern DevOps practices including containerization, reverse proxying, CI/CD, monitoring, security hardening, automated backups, and cloud deployment.
 
+## 🎥 Deployment Walkthrough Video
+
+Watch the full deployment walkthrough here:
+
+[▶️ Watch Video](https://your-video-link-here)
+
+---
+
 ## Architecture Overview
 
 ![Architecture](./docs/architecture.png)
